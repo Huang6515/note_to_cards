@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>笔记转卡片 · Note to Cards</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <div class="bg-glow bg-glow-1"></div>
+  <div class="bg-glow bg-glow-2"></div>
+
+  <div class="app">
+    <header class="header">
+      <div class="logo">
+        <div class="logo-mark">N2C</div>
+        <div class="logo-text">
+          <h1>笔记转卡片</h1>
+          <p>Markdown 课程笔记 → 智能复习提纲 &amp; 自测卡片</p>
+        </div>
+      </div>
+    </header>
+
+    <section class="input-panel">
+      <div class="input-head">
+        <span class="input-label">粘贴你的 Markdown 课程笔记</span>
+        <button id="btn-clear" class="btn-ghost">清空</button>
+      </div>
+      <textarea id="markdown" class="markdown-input" placeholder="# 章节标题&#10;&#10;- 知识点一&#10;- 知识点二&#10;&#10;## 小节&#10;..."></textarea>
+      <div class="input-actions">
+        <button id="btn-fill" class="btn-ghost">填入示例笔记</button>
+        <button id="btn-generate" class="btn-primary">
+          <span class="btn-icon">✦</span> 一键生成复习卡片
+        </button>
+      </div>
+      <div id="status" class="status" hidden></div>
+    </section>
+
+    <main class="result" id="result" hidden>
+      <section class="column outline-column">
+        <div class="column-header">
+          <span class="dot dot-blue"></span>
+          <h2>结构化复习提纲</h2>
+        </div>
+        <div id="outline" class="outline"></div>
+      </section>
+
+      <section class="column card-column">
+        <div class="column-header">
+          <span class="dot dot-cyan"></span>
+          <h2>自测刷题卡片</h2>
+          <span id="card-progress" class="progress-text"></span>
+        </div>
+        <div class="card-stage">
+          <div class="card-inner" id="card-inner">
+            <div class="card-face card-front">
+              <span id="card-type" class="card-type">单选题</span>
+              <p id="card-question" class="card-question"></p>
+              <ul id="card-options" class="card-options"></ul>
+              <div id="card-hint" class="card-hint" hidden>点击卡片查看答案</div>
+            </div>
+            <div class="card-face card-back">
+              <span class="card-type card-type-answer">答案与解析</span>
+              <p id="card-answer" class="card-answer"></p>
+              <p id="card-explanation" class="card-explanation"></p>
+            </div>
+          </div>
+        </div>
+        <div class="card-controls">
+          <button id="btn-prev" class="btn-nav">‹ 上一题</button>
+          <span id="card-counter" class="card-counter"></span>
+          <button id="btn-next" class="btn-nav">下一题 ›</button>
+        </div>
+        <p class="card-tip">点击卡片正面即可 3D 翻转查看答案</p>
+      </section>
+    </main>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
