@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="light" />
+  <title>灵动笔卡 · 笔记转智能复习卡片</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <div class="logo">
+        <div class="logo-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M12 3l2.2 6.6 6.6 2.2-6.6 2.2L12 20.6l-2.2-6.6L3.2 11.8l6.6-2.2L12 3z" fill="currentColor"/>
+          </svg>
+        </div>
+        <div class="logo-text">
+          <span class="wordmark">灵动笔卡</span>
+          <span class="brand-sub">NoteMind AI</span>
+        </div>
+      </div>
+      <p class="tagline">把课程笔记，变成会提问的智能复习卡片</p>
+    </header>
+
+    <section class="input-panel card">
+      <div class="input-head">
+        <label for="markdown" class="input-label">粘贴 Markdown 课程笔记</label>
+        <button id="btn-clear" class="btn-quiet" type="button">清空</button>
+      </div>
+
+      <textarea id="markdown" class="markdown-input" spellcheck="false"
+        placeholder="# 章节标题&#10;&#10;- 知识点一&#10;- 知识点二&#10;&#10;## 小节&#10;..."></textarea>
+
+      <div class="input-actions">
+        <button id="btn-fill" class="btn-quiet" type="button">填入示例笔记</button>
+        <button id="btn-generate" class="btn-primary" type="button">
+          <svg class="btn-spark" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M12 3l2.2 6.6 6.6 2.2-6.6 2.2L12 20.6l-2.2-6.6L3.2 11.8l6.6-2.2L12 3z" fill="currentColor"/>
+          </svg>
+          <span>一键生成复习卡片</span>
+        </button>
+      </div>
+
+      <div id="status" class="status" role="status" aria-live="polite" hidden></div>
+    </section>
+
+    <main class="result" id="result" hidden>
+      <section class="column card outline-column">
+        <div class="column-header">
+          <span class="pill-icon pill-icon-blue" aria-hidden="true"></span>
+          <h2>结构化复习提纲</h2>
+        </div>
+        <div id="outline" class="outline"></div>
+      </section>
+
+      <section class="column card card-column">
+        <div class="column-header">
+          <span class="pill-icon pill-icon-indigo" aria-hidden="true"></span>
+          <h2>自测刷题卡片</h2>
+          <span id="card-progress" class="progress-text"></span>
+        </div>
+
+        <div class="card-stage">
+          <div class="card-inner" id="card-inner" tabindex="0" role="button" aria-label="翻转卡片查看答案">
+            <div class="card-face card-front">
+              <span id="card-type" class="card-type">单选题</span>
+              <p id="card-question" class="card-question"></p>
+              <ul id="card-options" class="card-options"></ul>
+              <div id="card-hint" class="card-hint" hidden>轻点卡片查看答案</div>
+            </div>
+            <div class="card-face card-back">
+              <span class="card-type card-type-answer">答案与解析</span>
+              <p id="card-answer" class="card-answer"></p>
+              <p id="card-explanation" class="card-explanation"></p>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-controls">
+          <button id="btn-prev" class="btn-nav" type="button" aria-label="上一题">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            上一题
+          </button>
+          <span id="card-counter" class="card-counter"></span>
+          <button id="btn-next" class="btn-nav" type="button" aria-label="下一题">
+            下一题
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+
+        <p class="card-tip"><kbd>空格</kbd> 翻转 · <kbd>←</kbd> <kbd>→</kbd> 切换题目</p>
+      </section>
+    </main>
+
+    <footer class="footer">灵动笔卡 · 主动回忆，让记忆更牢靠</footer>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
