@@ -70,6 +70,7 @@ function escapeHtml(str) {
     .replace(/"/g, "&quot;");
 }
 
+/* ---------- 提纲渲染 ---------- */
 function renderOutline(outline) {
   const container = els.outline;
   container.innerHTML = "";
@@ -86,22 +87,26 @@ function renderOutline(outline) {
 
   const tree = document.createElement("ul");
   tree.className = "outline-tree";
-  outline.sections.forEach((section) => tree.appendChild(buildNode(section)));
+  outline.sections.forEach((section) => tree.appendChild(buildOutlineNode(section)));
   container.appendChild(tree);
 }
 
-function buildNode(section) {
+function buildOutlineNode(section) {
   const li = document.createElement("li");
   li.className = "outline-node";
 
   const head = document.createElement("div");
   head.className = "outline-node-head";
-  head.appendChild(document.createElement("span")).className = "outline-bullet";
+
+  const bullet = document.createElement("span");
+  bullet.className = "outline-bullet";
+  head.appendChild(bullet);
 
   const title = document.createElement("span");
   title.className = "outline-node-title";
   title.textContent = section.title || "";
   head.appendChild(title);
+
   li.appendChild(head);
 
   (section.points || []).forEach((point) => {
@@ -114,13 +119,14 @@ function buildNode(section) {
   if (section.children && section.children.length > 0) {
     const childrenUl = document.createElement("ul");
     childrenUl.className = "outline-children";
-    section.children.forEach((child) => childrenUl.appendChild(buildNode(child)));
+    section.children.forEach((child) => childrenUl.appendChild(buildOutlineNode(child)));
     li.appendChild(childrenUl);
   }
 
   return li;
 }
 
+/* ---------- 卡片渲染 ---------- */
 function renderQuestion(index) {
   const q = questions[index];
   if (!q) return;
@@ -129,10 +135,12 @@ function renderQuestion(index) {
 
   const isSingle = q.type !== "qa";
   els.cardType.textContent = isSingle ? "单选题" : "问答题";
-
   els.cardQuestion.textContent = q.question || "";
 
-  // 选项（仅单选题）
+  // 重置滚动位置，切换题目时从顶部开始
+  els.cardOptions.scrollTop = 0;
+  els.cardExplanation.scrollTop = 0;
+
   if (isSingle && Array.isArray(q.options) && q.options.length > 0) {
     els.cardOptions.hidden = false;
     els.cardHint.hidden = true;
@@ -140,11 +148,14 @@ function renderQuestion(index) {
     q.options.forEach((opt, i) => {
       const li = document.createElement("li");
       li.className = "card-option";
+
       const key = document.createElement("span");
       key.className = "option-key";
       key.textContent = OPTION_KEYS[i] || String(i + 1);
+
       const text = document.createElement("span");
       text.textContent = opt;
+
       li.appendChild(key);
       li.appendChild(text);
       els.cardOptions.appendChild(li);
@@ -155,11 +166,9 @@ function renderQuestion(index) {
     els.cardHint.hidden = false;
   }
 
-  // 答案与解析
   els.cardAnswer.textContent = q.answer || "";
   els.cardExplanation.textContent = q.explanation || "（无解析）";
 
-  // 计数与进度
   els.counter.textContent = `${index + 1} / ${questions.length}`;
   els.progress.textContent = `共 ${questions.length} 题`;
   els.prev.disabled = index === 0;
@@ -171,6 +180,7 @@ function flipCard() {
   els.cardInner.classList.toggle("flipped");
 }
 
+/* ---------- 生成 ---------- */
 async function generate() {
   const markdown = els.markdown.value.trim();
   if (!markdown) {
@@ -209,7 +219,7 @@ async function generate() {
     els.result.hidden = false;
     els.result.scrollIntoView({ behavior: "smooth", block: "start" });
 
-    let msg = "生成完成 ✅";
+    let msg = "生成完成";
     if (data.source === "sample") {
       msg = "未配置 AI 模型，已展示内置示例数据（配置 LLM_API_KEY 后可启用真实模型）";
     }
@@ -235,16 +245,46 @@ function nextQuestion() {
   }
 }
 
+/* ---------- 事件绑定 ---------- */
 els.generate.addEventListener("click", generate);
+
 els.clear.addEventListener("click", () => {
   els.markdown.value = "";
   setStatus("");
   els.markdown.focus();
 });
+
 els.fill.addEventListener("click", () => {
   els.markdown.value = SAMPLE_TEXT;
   setStatus("");
 });
+
 els.cardInner.addEventListener("click", flipCard);
+els.cardInner.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" || e.key === " ") {
+    e.preventDefault();
+    flipCard();
+  }
+});
+
 els.prev.addEventListener("click", prevQuestion);
 els.next.addEventListener("click", nextQuestion);
+
+/* 键盘快捷键：← → 切换题目，空格 翻转 */
+document.addEventListener("keydown", (e) => {
+  const target = e.target;
+  if (target && (target.tagName === "TEXTAREA" || target.tagName === "INPUT")) return;
+
+  if (questions.length === 0) return;
+
+  if (e.key === "ArrowLeft") {
+    e.preventDefault();
+    prevQuestion();
+  } else if (e.key === "ArrowRight") {
+    e.preventDefault();
+    nextQuestion();
+  } else if (e.key === " ") {
+    e.preventDefault();
+    flipCard();
+  }
+});
