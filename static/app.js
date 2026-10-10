@@ -27,6 +27,8 @@ const OPTION_KEYS = ["A", "B", "C", "D", "E", "F"];
 
 let questions = [];
 let currentIndex = 0;
+let answered = false;   // 当前题是否已作答
+let flipTimer = null;   // 0.8s 延时翻转定时器
 
 const SAMPLE_TEXT = `# 计算机网络基础
 
@@ -131,6 +133,8 @@ function renderQuestion(index) {
   const q = questions[index];
   if (!q) return;
 
+  resetFlipTimer();
+  answered = false;
   els.cardInner.classList.remove("flipped");
 
   const isSingle = q.type !== "qa";
@@ -145,19 +149,34 @@ function renderQuestion(index) {
     els.cardOptions.hidden = false;
     els.cardHint.hidden = true;
     els.cardOptions.innerHTML = "";
+
     q.options.forEach((opt, i) => {
       const li = document.createElement("li");
       li.className = "card-option";
+      li.dataset.option = opt;
+      li.setAttribute("role", "button");
+      li.setAttribute("tabindex", "0");
+      li.setAttribute("aria-label", "选项 " + (OPTION_KEYS[i] || String(i + 1)));
 
       const key = document.createElement("span");
       key.className = "option-key";
       key.textContent = OPTION_KEYS[i] || String(i + 1);
 
       const text = document.createElement("span");
+      text.className = "option-text";
       text.textContent = opt;
 
       li.appendChild(key);
       li.appendChild(text);
+
+      li.addEventListener("click", () => answerOption(li, q));
+      li.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          answerOption(li, q);
+        }
+      });
+
       els.cardOptions.appendChild(li);
     });
   } else {
@@ -175,8 +194,42 @@ function renderQuestion(index) {
   els.next.disabled = index === questions.length - 1;
 }
 
-function flipCard() {
-  if (questions.length === 0) return;
+function resetFlipTimer() {
+  if (flipTimer) {
+    clearTimeout(flipTimer);
+    flipTimer = null;
+  }
+}
+
+/* 作答：即时对错反馈，0.8s 停顿后翻转 */
+function answerOption(clicked, q) {
+  if (answered) return;
+  answered = true;
+
+  const listItems = els.cardOptions.querySelectorAll(".card-option");
+  const isCorrect = clicked.dataset.option === q.answer;
+
+  listItems.forEach((li) => {
+    // 正确选项始终高亮为绿色
+    if (li.dataset.option === q.answer) {
+      li.classList.add("correct");
+    }
+    // 点错的选项标红，其余干扰项淡出
+    if (!isCorrect) {
+      if (li === clicked) {
+        li.classList.add("wrong");
+      } else if (li.dataset.option !== q.answer) {
+        li.classList.add("dimmed");
+      }
+    }
+  });
+
+  flipTimer = setTimeout(() => {
+    els.cardInner.classList.add("flipped");
+  }, 800);
+}
+
+function toggleCard() {
   els.cardInner.classList.toggle("flipped");
 }
 
@@ -259,11 +312,24 @@ els.fill.addEventListener("click", () => {
   setStatus("");
 });
 
-els.cardInner.addEventListener("click", flipCard);
+// 卡片点击：问答翻面 / 已作答单选翻面 / 背面翻回
+els.cardInner.addEventListener("click", (e) => {
+  if (e.target.closest(".card-option")) return; // 选项点击由其自身处理
+  const q = questions[currentIndex];
+  if (!q) return;
+  const isSingle = q.type !== "qa";
+  if (isSingle && !answered) return; // 单选未作答，点空白不翻转
+  toggleCard();
+});
+
 els.cardInner.addEventListener("keydown", (e) => {
   if (e.key === "Enter" || e.key === " ") {
     e.preventDefault();
-    flipCard();
+    const q = questions[currentIndex];
+    if (!q) return;
+    const isSingle = q.type !== "qa";
+    if (isSingle && !answered) return;
+    toggleCard();
   }
 });
 
@@ -285,6 +351,9 @@ document.addEventListener("keydown", (e) => {
     nextQuestion();
   } else if (e.key === " ") {
     e.preventDefault();
-    flipCard();
+    const q = questions[currentIndex];
+    const isSingle = q && q.type !== "qa";
+    if (isSingle && !answered) return;
+    toggleCard();
   }
 });

@@ -3,44 +3,41 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="color-scheme" content="dark" />
-  <title>Note2Card · 笔记转智能复习卡片</title>
+  <meta name="color-scheme" content="light" />
+  <title>灵动笔卡 · 笔记转智能复习卡片</title>
   <link rel="stylesheet" href="/static/style.css" />
 </head>
 <body>
-  <!-- 流动 Mesh Gradient 光晕 -->
-  <div class="mesh" aria-hidden="true">
-    <div class="mesh-orb mesh-orb-1"></div>
-    <div class="mesh-orb mesh-orb-2"></div>
-    <div class="mesh-orb mesh-orb-3"></div>
-    <div class="mesh-orb mesh-orb-4"></div>
-  </div>
-  <div class="noise" aria-hidden="true"></div>
-
   <div class="app">
     <header class="header">
       <div class="logo">
-        <span class="glow-dot" aria-hidden="true"></span>
-        <span class="wordmark">Note2Card</span>
+        <div class="logo-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M12 3l2.2 6.6 6.6 2.2-6.6 2.2L12 20.6l-2.2-6.6L3.2 11.8l6.6-2.2L12 3z" fill="currentColor"/>
+          </svg>
+        </div>
+        <div class="logo-text">
+          <span class="wordmark">灵动笔卡</span>
+          <span class="brand-sub">NoteMind AI</span>
+        </div>
       </div>
       <p class="tagline">把课程笔记，变成会提问的智能复习卡片</p>
     </header>
 
-    <section class="input-panel glass">
+    <section class="input-panel card">
       <div class="input-head">
-        <span class="input-label">粘贴 Markdown 课程笔记</span>
-        <button id="btn-clear" class="btn-ghost" type="button">清空</button>
+        <label for="markdown" class="input-label">粘贴 Markdown 课程笔记</label>
+        <button id="btn-clear" class="btn-quiet" type="button">清空</button>
       </div>
 
       <textarea id="markdown" class="markdown-input" spellcheck="false"
         placeholder="# 章节标题&#10;&#10;- 知识点一&#10;- 知识点二&#10;&#10;## 小节&#10;..."></textarea>
 
       <div class="input-actions">
-        <button id="btn-fill" class="btn-ghost" type="button">填入示例笔记</button>
+        <button id="btn-fill" class="btn-quiet" type="button">填入示例笔记</button>
         <button id="btn-generate" class="btn-primary" type="button">
-          <span class="btn-shine" aria-hidden="true"></span>
           <svg class="btn-spark" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path d="M12 2.5l2.1 6.4 6.4 2.1-6.4 2.1L12 19.5l-2.1-6.4L3.5 11l6.4-2.1L12 2.5z" fill="currentColor"/>
+            <path d="M12 3l2.2 6.6 6.6 2.2-6.6 2.2L12 20.6l-2.2-6.6L3.2 11.8l6.6-2.2L12 3z" fill="currentColor"/>
           </svg>
           <span>一键生成复习卡片</span>
         </button>
@@ -50,7 +47,7 @@
     </section>
 
     <main class="result" id="result" hidden>
-      <section class="column glass outline-column">
+      <section class="column card outline-column">
         <div class="column-header">
           <span class="pill-icon pill-icon-blue" aria-hidden="true"></span>
           <h2>结构化复习提纲</h2>
@@ -58,9 +55,9 @@
         <div id="outline" class="outline"></div>
       </section>
 
-      <section class="column glass card-column">
+      <section class="column card card-column">
         <div class="column-header">
-          <span class="pill-icon pill-icon-purple" aria-hidden="true"></span>
+          <span class="pill-icon pill-icon-indigo" aria-hidden="true"></span>
           <h2>自测刷题卡片</h2>
           <span id="card-progress" class="progress-text"></span>
         </div>
@@ -97,7 +94,7 @@
       </section>
     </main>
 
-    <footer class="footer">Note2Card · 主动回忆，让记忆更牢靠</footer>
+    <footer class="footer">灵动笔卡 · 主动回忆，让记忆更牢靠</footer>
   </div>
 
   <script src="/static/app.js"></script>
