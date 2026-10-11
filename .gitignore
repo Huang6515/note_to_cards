@@ -1,9 +1,21 @@
 __pycache__/
 *.py[cod]
 .env
+.env.local
 .venv/
 venv/
 .idea/
 .vscode/
 *.log
 .DS_Store
+
+# 测试与工具缓存
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+
+# 本地验证产物
+.pydeps/
+wheels/
+.tmp/
+node_modules/
