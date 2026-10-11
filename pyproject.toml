@@ -1,0 +1,16 @@
+[tool.pytest.ini_options]
+# 让 tests/ 能直接 import config / llm / main，不再需要 sys.path 小技巧
+pythonpath = ["."]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+exclude = [".pydeps", ".tmp", "wheels", "scratch-ui"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "ASYNC", "C4"]
+ignore = [
+  "B008",  # FastAPI 的 Depends()/Field() 就该写在默认值位置
+]
