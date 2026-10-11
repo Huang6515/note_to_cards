@@ -1,12 +1,15 @@
 """LLM 客户端：调用 OpenAI 兼容接口，将 Markdown 笔记转换为结构化 JSON。"""
 
 import json
+import logging
 import os
 import re
 
 import httpx
 
 from sample_data import SAMPLE_DATA
+
+logger = logging.getLogger("note_to_cards.llm")
 
 SYSTEM_PROMPT = """你是一名专业的课程学习助手，擅长将课程笔记整理成复习材料与自测题目。
 
@@ -50,14 +53,16 @@ SYSTEM_PROMPT = """你是一名专业的课程学习助手，擅长将课程笔�
 6. 语言与笔记保持一致（中文笔记用中文，英文笔记用英文）。
 """
 
+_OPTION_LETTERS = ["A", "B", "C", "D", "E", "F"]
+
 
 def _normalize_base_url(base_url: str) -> str:
     """规范化 base_url，兼容是否带 /v1 的情况。"""
     base_url = (base_url or "").strip().rstrip("/")
     if not base_url:
         return ""
-    if base_url.endswith("/v1") or base_url.endswith("/v1/"):
-        return base_url.rstrip("/") + "/chat/completions"
+    if base_url.endswith("/v1"):
+        return base_url + "/chat/completions"
     return base_url + "/v1/chat/completions"
 
 
@@ -74,41 +79,132 @@ def _extract_json(text: str):
         return json.loads(text)
     except json.JSONDecodeError:
         pass
-    # 退而求其次：截取第一个 { 到最后一个 }
+    # 退而求其次：截取第一个 { 到最后一个 }，并尝试修复尾部多余的逗号与注释
     start = text.find("{")
     end = text.rfind("}")
     if start != -1 and end != -1 and end > start:
+        snippet = text[start : end + 1]
+        snippet = re.sub(r",\s*([}\]])", r"\1", snippet)
+        snippet = re.sub(r"//[^\n]*", "", snippet)
         try:
-            return json.loads(text[start : end + 1])
+            return json.loads(snippet)
         except json.JSONDecodeError:
             return None
     return None
 
 
+def _resolve_single_answer(answer: str, options: list) -> str:
+    """尽力把答案对齐到 options 中的某一项。
+
+    兼容 answer 为「A」/「A. 选项内容」/「选项内容」等写法。
+    """
+    if not isinstance(answer, str):
+        return ""
+    answer = answer.strip()
+    if not answer:
+        return ""
+    # 直接命中
+    if answer in options:
+        return answer
+    # 去掉「X. 」前缀后命中
+    stripped = re.sub(r"^[A-Fa-f][\.、:：)\s]+", "", answer).strip()
+    if stripped in options:
+        return stripped
+    # 单个字母映射到 options 下标
+    upper = answer.upper()
+    if upper in _OPTION_LETTERS:
+        idx = _OPTION_LETTERS.index(upper)
+        if idx < len(options):
+            return options[idx]
+    return answer
+
+
 def _normalize(data: dict) -> dict:
-    """对 LLM 返回值做一次轻量校验与兜底。"""
+    """对 LLM 返回值做字段级校验与补全，丢弃无效题目。"""
     outline = data.get("outline") or {}
-    questions = data.get("questions") or []
-    if not isinstance(questions, list):
-        questions = []
+    if not isinstance(outline, dict):
+        outline = {}
+    sections = outline.get("sections") or []
+    if not isinstance(sections, list):
+        sections = []
+
+    questions_raw = data.get("questions") or []
+    if not isinstance(questions_raw, list):
+        questions_raw = []
+
+    questions = []
+    for q in questions_raw:
+        if not isinstance(q, dict):
+            continue
+        q_type = q.get("type")
+        question = (q.get("question") or "").strip()
+        explanation = (q.get("explanation") or "").strip()
+        if not question:
+            continue
+
+        if q_type == "single":
+            options = q.get("options") or []
+            if not isinstance(options, list):
+                continue
+            options = [str(o).strip() for o in options if o]
+            if len(options) < 2:
+                continue
+            answer = _resolve_single_answer(q.get("answer"), options)
+            questions.append(
+                {
+                    "type": "single",
+                    "question": question,
+                    "options": options,
+                    "answer": answer,
+                    "explanation": explanation,
+                }
+            )
+        elif q_type == "qa":
+            answer = (q.get("answer") or "").strip()
+            questions.append(
+                {
+                    "type": "qa",
+                    "question": question,
+                    "answer": answer,
+                    "explanation": explanation,
+                }
+            )
+        # 其余未知 type 忽略
+
     return {
         "outline": {
             "title": outline.get("title") or "复习提纲",
-            "sections": outline.get("sections") or [],
+            "sections": sections,
         },
         "questions": questions,
         "source": "llm",
     }
 
 
-async def generate_with_llm(markdown: str) -> dict:
-    """调用 OpenAI 兼容接口生成复习内容。失败时返回 None，由调用方兜底。"""
+async def _post_completion(client: httpx.AsyncClient, endpoint: str, payload: dict, headers: dict):
+    """发送请求，并对不支持 response_format 的接口做一次降级重试。"""
+    response = await client.post(endpoint, json=payload, headers=headers)
+    # 部分兼容接口不接受 response_format，去掉后重试一次
+    if response.status_code == 400 and "response_format" in payload:
+        retry_payload = {k: v for k, v in payload.items() if k != "response_format"}
+        logger.warning("接口不支持 response_format，降级重试")
+        response = await client.post(endpoint, json=retry_payload, headers=headers)
+    return response
+
+
+async def generate_with_llm(markdown: str):
+    """调用 OpenAI 兼容接口生成复习内容。
+
+    返回 (result, failure_reason)：
+    - 成功时 result 为 dict，failure_reason 为 None
+    - 失败时 result 为 None，failure_reason 为 not_configured / http_error / parse_error
+    """
     base_url = os.getenv("LLM_BASE_URL", "")
     api_key = os.getenv("LLM_API_KEY", "")
     model = os.getenv("LLM_MODEL", "")
 
     if not api_key or not model:
-        return None
+        return None, "not_configured"
 
     endpoint = _normalize_base_url(base_url or "https://api.openai.com")
     timeout = float(os.getenv("LLM_TIMEOUT", "60"))
@@ -129,27 +225,38 @@ async def generate_with_llm(markdown: str) -> dict:
 
     try:
         async with httpx.AsyncClient(timeout=timeout) as client:
-            response = await client.post(endpoint, json=payload, headers=headers)
+            response = await _post_completion(client, endpoint, payload, headers)
             response.raise_for_status()
             body = response.json()
-    except Exception:
-        return None
+    except Exception as exc:
+        logger.warning("LLM 请求失败: %s", exc)
+        return None, "http_error"
 
     # 优先取 content，兼容不同返回结构
     try:
         content = body["choices"][0]["message"]["content"]
-    except (KeyError, IndexError, TypeError):
-        return None
+    except (KeyError, IndexError, TypeError) as exc:
+        logger.warning("LLM 返回结构异常: %s", exc)
+        return None, "parse_error"
 
     parsed = _extract_json(content)
     if parsed is None:
-        return None
-    return _normalize(parsed)
+        logger.warning("LLM 返回内容无法解析为 JSON")
+        return None, "parse_error"
+
+    result = _normalize(parsed)
+    if not result["questions"]:
+        logger.warning("LLM 返回的 questions 为空")
+        return None, "parse_error"
+
+    return result, None
 
 
 async def generate_review_content(markdown: str) -> dict:
-    """入口：优先调用真实模型，失败则返回内置示例数据。"""
-    result = await generate_with_llm(markdown)
+    """入口：优先调用真实模型，失败则返回内置示例数据并标注失败原因。"""
+    result, reason = await generate_with_llm(markdown)
     if result is not None:
         return result
-    return SAMPLE_DATA
+
+    fallback = {**SAMPLE_DATA, "fallback_reason": reason or "unknown"}
+    return fallback
