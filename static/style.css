@@ -416,6 +416,19 @@ button {
   border-color: var(--error-border);
 }
 
+/* 成功与降级（警示）两种状态：把"生成成功"和"用了示例数据"在视觉上区分开 */
+.status.ok {
+  color: var(--success-text);
+  background: var(--success-bg);
+  border-color: var(--success-border);
+}
+
+.status.warn {
+  color: #92400e;
+  background: #fef3c7;
+  border-color: #fde68a;
+}
+
 .spinner {
   display: inline-block;
   width: 14px;
@@ -883,15 +896,25 @@ kbd {
 /* ============================================================
    焦点可见性（无障碍）
    ============================================================ */
+/* 默认保留一个可见焦点环：以后新增可聚焦元素时不会出现"完全看不见焦点"的情况 */
 :focus-visible {
-  outline: none;
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 a:focus-visible,
 button:focus-visible,
 textarea:focus-visible,
-.card-option:focus-visible {
+.tool-btn:focus-visible,
+.card-option:focus-visible,
+.markdown-input:focus-visible {
+  outline: none;
   box-shadow: 0 0 0 3px var(--accent-ring);
+}
+
+/* 卡片容器的焦点样式由 .card-inner:focus-visible .card-face 提供 */
+.card-inner:focus-visible {
+  outline: none;
 }
 
 /* ============================================================
@@ -954,4 +977,129 @@ textarea:focus-visible,
     transition-duration: 0.001ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* ============================================================
+   结果区工具栏（打乱 / 错题本 / 重置进度 / 导出）
+   ============================================================ */
+.result-tools {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.tools-spacer {
+  flex: 1 1 auto;
+}
+
+.tool-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 40px;
+  padding: 9px 16px;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 550;
+  color: var(--text-2);
+  cursor: pointer;
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.62), rgba(255, 255, 255, 0.62)) padding-box,
+    var(--border-grad) border-box;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition:
+    color 0.25s var(--ease),
+    transform 0.25s var(--ease),
+    box-shadow 0.25s var(--ease);
+}
+
+.tool-btn:hover:not(:disabled) {
+  color: var(--accent);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.tool-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.tool-btn.active {
+  color: #ffffff;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  box-shadow: 0 6px 18px rgba(79, 140, 255, 0.28);
+}
+
+.tool-count {
+  min-width: 20px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  background: rgba(79, 140, 255, 0.14);
+  color: var(--accent);
+}
+
+.tool-btn.active .tool-count {
+  background: rgba(255, 255, 255, 0.28);
+  color: #ffffff;
+}
+
+/* ============================================================
+   输入区辅助信息
+   ============================================================ */
+.char-count {
+  font-size: 12.5px;
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.char-count-warn {
+  color: #b45309;
+}
+
+.restore-hint {
+  margin-top: 14px;
+  padding: 11px 16px;
+  border-radius: var(--radius-sm);
+  font-size: 13.5px;
+  color: var(--text-2);
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(106, 166, 255, 0.22);
+}
+
+/* ============================================================
+   答题进度条
+   ============================================================ */
+.progress-track {
+  height: 6px;
+  margin-bottom: 20px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(106, 166, 255, 0.14);
+}
+
+.progress-fill {
+  width: 0%;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  transition: width 0.35s var(--ease);
+}
+
+/* ============================================================
+   作答反馈（同时是 aria-live 区域）
+   ============================================================ */
+.feedback {
+  min-height: 22px;
+  margin-top: 14px;
+  text-align: center;
+  font-size: 13.5px;
+  font-weight: 550;
+  color: var(--text-2);
 }

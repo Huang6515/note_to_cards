@@ -4,7 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="color-scheme" content="light" />
+  <meta name="description" content="把 Markdown 课程笔记，一键变成结构化复习提纲与自测刷题卡片。" />
   <title>灵动笔卡 · 笔记转智能复习卡片</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2.5l2.3 6.8 6.8 2.3-6.8 2.3L12 21.5l-2.3-6.8L2.9 12.4l6.8-2.3L12 2.5z' fill='%236aa6ff'/%3E%3C/svg%3E" />
   <link rel="stylesheet" href="/static/style.css" />
 </head>
 <body>
@@ -16,80 +18,104 @@
           <div class="logo-sparkle" aria-hidden="true"></div>
         </div>
         <div class="logo-text">
-          <span class="wordmark">灵动笔卡</span>
+          <h1 class="wordmark">灵动笔卡</h1>
           <span class="brand-sub">NoteMind AI</span>
         </div>
       </div>
       <p class="tagline">把课程笔记，变成会提问的智能复习卡片</p>
     </header>
 
-    <section class="input-panel card">
-      <div class="input-head">
-        <label for="markdown" class="input-label">粘贴 Markdown 课程笔记</label>
-        <button id="btn-clear" class="btn-quiet" type="button">清空</button>
-      </div>
-
-      <textarea id="markdown" class="markdown-input" spellcheck="false"
-        placeholder="# 章节标题&#10;&#10;- 知识点一&#10;- 知识点二&#10;&#10;## 小节&#10;..."></textarea>
-
-      <div class="input-actions">
-        <button id="btn-fill" class="btn-quiet" type="button">填入示例笔记</button>
-        <button id="btn-generate" class="btn-primary" type="button">
-          <svg class="btn-spark" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path d="M12 3l2.2 6.6 6.6 2.2-6.6 2.2L12 20.6l-2.2-6.6L3.2 11.8l6.6-2.2L12 3z" fill="currentColor"/>
-          </svg>
-          <span>一键生成复习卡片</span>
-        </button>
-      </div>
-
-      <div id="status" class="status" role="status" aria-live="polite" hidden></div>
-    </section>
-
-    <main class="result" id="result" hidden>
-      <section class="column card outline-column">
-        <div class="column-header">
-          <span class="pill-icon pill-icon-blue" aria-hidden="true"></span>
-          <h2>结构化复习提纲</h2>
+    <main>
+      <section class="input-panel card" aria-labelledby="input-title">
+        <div class="input-head">
+          <label for="markdown" class="input-label" id="input-title">粘贴 Markdown 课程笔记</label>
+          <span id="char-count" class="char-count" aria-hidden="true">0 / 50000</span>
         </div>
-        <div id="outline" class="outline"></div>
+
+        <textarea id="markdown" class="markdown-input" spellcheck="false" maxlength="50000"
+          aria-describedby="status"
+          placeholder="# 章节标题&#10;&#10;- 知识点一&#10;- 知识点二&#10;&#10;## 小节&#10;..."></textarea>
+
+        <div class="input-actions">
+          <button id="btn-fill" class="btn-quiet" type="button">填入示例笔记</button>
+          <button id="btn-clear" class="btn-quiet" type="button">清空</button>
+          <button id="btn-generate" class="btn-primary" type="button">
+            <svg class="btn-spark" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M12 3l2.2 6.6 6.6 2.2-6.6 2.2L12 20.6l-2.2-6.6L3.2 11.8l6.6-2.2L12 3z" fill="currentColor"/>
+            </svg>
+            <span>一键生成复习卡片</span>
+          </button>
+        </div>
+
+        <p id="restore-hint" class="restore-hint" hidden></p>
+        <div id="status" class="status" role="status" aria-live="polite" hidden></div>
       </section>
 
-      <section class="column card card-column">
-        <div class="column-header">
-          <span class="pill-icon pill-icon-indigo" aria-hidden="true"></span>
-          <h2>自测刷题卡片</h2>
-          <span id="card-progress" class="progress-text"></span>
+      <section class="result" id="result" aria-label="生成结果" hidden>
+        <div class="result-tools">
+          <button id="btn-shuffle" class="tool-btn" type="button">打乱顺序</button>
+          <button id="btn-wrongbook" class="tool-btn" type="button" aria-pressed="false">
+            错题本 <span id="wrong-count" class="tool-count">0</span>
+          </button>
+          <button id="btn-reset" class="tool-btn" type="button">重置进度</button>
+          <span class="tools-spacer"></span>
+          <button id="btn-export-md" class="tool-btn" type="button">导出 Markdown</button>
+          <button id="btn-export-csv" class="tool-btn" type="button">导出 CSV（Anki 可导入）</button>
         </div>
 
-        <div class="card-stage">
-          <div class="card-inner" id="card-inner" tabindex="0" role="button" aria-label="翻转卡片查看答案">
-            <div class="card-face card-front">
-              <span id="card-type" class="card-type">单选题</span>
-              <p id="card-question" class="card-question"></p>
-              <ul id="card-options" class="card-options"></ul>
-              <div id="card-hint" class="card-hint" hidden>轻点卡片查看答案</div>
-            </div>
-            <div class="card-face card-back">
-              <span class="card-type card-type-answer">答案与解析</span>
-              <p id="card-answer" class="card-answer"></p>
-              <p id="card-explanation" class="card-explanation"></p>
+        <section class="column card outline-column" aria-labelledby="outline-title">
+          <div class="column-header">
+            <span class="pill-icon pill-icon-blue" aria-hidden="true"></span>
+            <h2 id="outline-title">结构化复习提纲</h2>
+          </div>
+          <div id="outline" class="outline"></div>
+        </section>
+
+        <section class="column card card-column" aria-labelledby="quiz-title">
+          <div class="column-header">
+            <span class="pill-icon pill-icon-indigo" aria-hidden="true"></span>
+            <h2 id="quiz-title">自测刷题卡片</h2>
+            <span id="card-progress" class="progress-text"></span>
+          </div>
+
+          <div class="progress-track" id="progress-track" role="progressbar"
+               aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="答题进度">
+            <div id="progress-fill" class="progress-fill"></div>
+          </div>
+
+          <div class="card-stage">
+            <div class="card-inner" id="card-inner" tabindex="0" role="button"
+                 aria-label="翻转卡片查看答案">
+              <div class="card-face card-front">
+                <span id="card-type" class="card-type">单选题</span>
+                <p id="card-question" class="card-question"></p>
+                <ul id="card-options" class="card-options" role="group" aria-label="选项"></ul>
+                <div id="card-hint" class="card-hint" hidden>轻点卡片查看答案</div>
+              </div>
+              <div class="card-face card-back">
+                <span class="card-type card-type-answer">答案与解析</span>
+                <p id="card-answer" class="card-answer"></p>
+                <p id="card-explanation" class="card-explanation"></p>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div class="card-controls">
-          <button id="btn-prev" class="btn-nav" type="button" aria-label="上一题">
-            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            上一题
-          </button>
-          <span id="card-counter" class="card-counter"></span>
-          <button id="btn-next" class="btn-nav" type="button" aria-label="下一题">
-            下一题
-            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </button>
-        </div>
+          <p id="feedback" class="feedback" role="status" aria-live="polite"></p>
 
-        <p class="card-tip"><kbd>空格</kbd> 翻转 · <kbd>←</kbd> <kbd>→</kbd> 切换题目</p>
+          <div class="card-controls">
+            <button id="btn-prev" class="btn-nav" type="button" aria-label="上一题">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              上一题
+            </button>
+            <span id="card-counter" class="card-counter"></span>
+            <button id="btn-next" class="btn-nav" type="button" aria-label="下一题">
+              下一题
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+          </div>
+
+          <p class="card-tip"><kbd>空格</kbd> 翻转 · <kbd>←</kbd> <kbd>→</kbd> 切题 · <kbd>A</kbd>~<kbd>D</kbd> 快速作答</p>
+        </section>
       </section>
     </main>
 
