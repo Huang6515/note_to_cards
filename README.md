@@ -46,6 +46,13 @@ uvicorn main:app --host 0.0.0.0 --port 8000
 # http://localhost:8000
 ```
 
+### Docker 部署
+
+```bash
+docker build -t note-to-cards .
+docker run -p 8000:8000 --env-file .env note-to-cards
+```
+
 ## AI 模型接入（可选）
 
 后端通过 OpenAI 兼容接口调用大模型。在 `.env` 或环境变量中配置：
@@ -100,6 +107,13 @@ note_to_cards/
 ├── requirements.txt
 ├── .env.example
 └── README.md
+```
+
+## 测试
+
+```bash
+pip install pytest
+python -m pytest tests/ -v
 ```
 
 ## 许可证
